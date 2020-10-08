@@ -1,0 +1,25 @@
+import pickle
+import matplotlib.pyplot as plt
+
+
+# profiles class
+class LIGHT_PROF():
+    def __init__(self, temp, salt, depth, lon, lat, date):
+        self.salt = salt
+        self.temp = temp
+        self.depth = depth
+        self.lon = lon
+        self.lat = lat
+        self.date = date
+        return
+
+
+# load profiles
+with open('ts_profiles.pkl', 'rb') as f:
+    PROFS = pickle.load(f)
+
+# one profile plot
+i = 5000
+prof = PROFS[i]
+
+plt.plot(prof.temp, -prof.depth)
