@@ -1,5 +1,6 @@
 import pickle
 import matplotlib.pyplot as plt
+from Interpolation import transform_string_date_into_integer, Point
 
 
 #HelloWorld
@@ -12,7 +13,13 @@ class LIGHT_PROF():
         self.lon = lon
         self.lat = lat
         self.date = date
-        return
+
+    def get_list_of_points(self):
+        """return associated list of points"""
+        date = transform_string_date_into_integer(str(self.date))
+        points = [Point(self.lon, self.lat, self.depth[i], date, self.temp[i], self.salt[i])
+                  for i in range(len(self.depth))]
+        return points
 
 
 def get_profiles():
@@ -23,9 +30,7 @@ def get_profiles():
 
 # load profiles
 if __name__ == '__main__':
-
-
-    # one profile plot
+    PROFS = get_profiles()
     i = 5000
     prof = PROFS[i]
     plt.plot(prof.temp, -prof.depth)

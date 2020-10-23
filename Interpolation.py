@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import  time
+import matplotlib.pyplot as plt
 
 class Point():
     def __init__(self, lon, lat, depth, date, temp=None, salt=None):
@@ -25,8 +26,11 @@ class Point():
         self.normalize()
         for p in list_points:
             p.normalize()
+
         weights = [gauss(self.distance_to(p), sigma) for p in list_points]
+
         S = sum(weights)
+
         weights = np.array([w/S for w in weights])
         temps = np.array([p.temp for p in list_points])
         salts = np.array([p.salt for p in list_points])
@@ -63,7 +67,8 @@ def transform_string_date_into_integer(date):
     day, _ = day.split(' ')
     year, month, day = int(year), int(month), int(day)
     lenght_of_months = [31,28,31,30,31,30,31,31,30,31,30,31]
-    return 365*(year-2013) + sum(lenght_of_months[:month-1]) + day
+    x = 365*(year-2013) + sum(lenght_of_months[:month-1]) + day
+    return x
 
 
 def compute_profiles_statistics(profiles):
@@ -86,31 +91,17 @@ def compute_profiles_statistics(profiles):
 
 
 
-class LIGHT_PROF():
-    def __init__(self, temp, salt, depth, lon, lat, date):
-        self.salt = salt
-        self.temp = temp
-        self.depth = depth
-        self.lon = lon
-        self.lat = lat
-        self.date = date
-
-    def get_list_of_points(self):
-        """return associated list of points"""
-        date = transform_string_date_into_integer(str(self.date))
-        points = [Point(self.lon, self.lat, self.depth[i], date, self.temp[i], self.salt[i])
-                  for i in range(len(self.depth))]
-        return points
-
 
 
 
 
 
 if __name__ == '__main__':
-    with open('ts_profiles.pkl', 'rb') as f:
-        PROFS = pickle.load(f)
+    from plot_data import get_profiles, LIGHT_PROF
+    PROFS = get_profiles()
 
+    #plt.plot(range(len(PROFS)), [len(p.depth) for p in PROFS])
+    #plt.show()
     compute_profiles_statistics(PROFS)
     p = Point(lon=10, lat=35, depth=1000, date=150)
     t = time.time()
@@ -118,6 +109,11 @@ if __name__ == '__main__':
     print('time to compute interpolation', time.time()-t)
     print(f'estimated temperature', p.temp)
     print('estimated salinity', p.salt)
+
+
+
+
+
 
 
 
