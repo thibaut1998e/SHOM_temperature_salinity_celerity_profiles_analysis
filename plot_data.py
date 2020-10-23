@@ -15,12 +15,18 @@ class LIGHT_PROF():
         return
 
 
+def get_profiles():
+    with open('ts_profiles.pkl', 'rb') as f:
+        PROFS = pickle.load(f)
+    return PROFS
+
+
 # load profiles
-with open('ts_profiles.pkl', 'rb') as f:
-    PROFS = pickle.load(f)
+if __name__ == '__main__':
 
-# one profile plot
-i = 5000
-prof = PROFS[i]
 
-plt.plot(prof.temp, -prof.depth)
+    # one profile plot
+    i = 5000
+    prof = PROFS[i]
+    plt.plot(prof.temp, -prof.depth)
+
