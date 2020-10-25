@@ -1,25 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 22 13:52:16 2020
-
-@author: Anthony
-"""
-
 import pickle
 import matplotlib.pyplot as plt
-
-
-# profiles class
-class LIGHT_PROF():
-    def __init__(self, temp, salt, depth, lon, lat, date):
-        self.salt = salt
-        self.temp = temp
-        self.depth = depth
-        self.lon = lon
-        self.lat = lat
-        self.date = date
-        return
-
+from plot_data import LIGHT_PROF, get_profiles
+from Interpolation import transform_string_date_into_integer
 
 # load profiles
 
@@ -31,24 +13,10 @@ lons = [prof.lon for prof in PROFS]
 
 surface_temps = [prof.temp[-1] for prof in PROFS]
 
-
-def transform_string_date_into_integer(date):
-    """IN : string in the form AAAA-MM-JJ 00:00:00 representing a date
-    OUT : integer, day 1 is 2013-01-01"""
-    year, month, day = date.split('-')
-    day, _ = day.split(' ')
-    year, month, day = int(year), int(month), int(day)
-    lenght_of_months = [31,28,31,30,31,30,31,31,30,31,30,31]
-    return 365*(year-2013) + sum(lenght_of_months[:month-1]) + day
-
-def day_number_to_period_of_year(day) :
-    while day > 365.25 :
-        day -= 365.25
-    return day
-
 dates = [prof.date for prof in PROFS]
 integer_dates = [transform_string_date_into_integer(str(date)) for date in dates]
 
+# Removing a few disturbing data
 good_data = []
 for i in range(len(PROFS)) :
     if integer_dates[i] < 258 or integer_dates[i] > 263 or surface_temps[i] > 18 :
@@ -82,10 +50,8 @@ while i < n :
     i += 1
 if integer_dates[-1] not in mean_surface_temps :
     mean_surface_temps[integer_dates[-1]] = sum_of_surface_temps / number_of_profiles
-'''
-for ind in range(len(integer_dates)) :
-    if surface_temps[i]
-'''
+
+# Looks for the missing days and fills them with the surrounding information
 X = list(mean_surface_temps)
 missing_ranges = []
 i = 1
@@ -105,8 +71,11 @@ for (i, j) in missing_ranges :
 
 X = [i for i in range(1, 366)]
 Y = [mean_surface_temps[x] for x in X]
+
 # Plots the means of the recorded surface temperatures over time
 #plt.plot(X, Y, color='red')
+
+# Appying a uniform kernel to make the Y data smoother
 number_days = 9
 smoothed_Y = []
 for d in range(number_days // 2) :
@@ -119,13 +88,14 @@ for d in range(number_days // 2) :
 # Plots the smoothed average of surface temperature over time
 #plt.plot(X, smoothed_Y, color='orange')
 
+# Creates residuals by removing the estimated influence of the day to the raw surface temperature data
 surface_temps_2 = []
 for ind in range(len(PROFS)) :
     prof = PROFS[ind]
     surface_temps_2.append(prof.temp[-1] - smoothed_Y[integer_dates[ind]-1])
 
 # Plots the residuals after removing the influence of the day
-plt.scatter(integer_dates, surface_temps_2)
+#plt.scatter(integer_dates, surface_temps_2)
 
 # Plots the temperature residuals against their latitudes
 #plt.scatter(lats, surface_temps_2)
@@ -137,16 +107,16 @@ reg = LinearRegression().fit(X, y)
 
 #plt.plot(X, reg.predict(X))
 
+# Creates residuals by removing the estimated influence of the latitude from the previous residuals
 surface_temps_3 = []
 for ind in range(len(PROFS)) :
     surface_temps_3.append(surface_temps_2[ind] - reg.predict(np.array([[lats[ind]]]))[0])
 
-# Plots the residuals after removing the influences of the day
-# and of the latitude
+# Plots the residual surface temperatures after removing the influences of the day and of the latitude
 plt.scatter(integer_dates, surface_temps_3)
 
 
-    
+
 def mean(L) :
     return sum(L) / len(L)
 
