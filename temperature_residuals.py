@@ -1,12 +1,13 @@
+
 import pickle
 import matplotlib.pyplot as plt
-from plot_data import LIGHT_PROF, get_profiles
-from Interpolation import transform_string_date_into_integer
+from utils import *
+
+
 
 # load profiles
 
-with open('ts_profiles.pkl', 'rb') as f:
-    PROFS = pickle.load(f)
+PROFS = get_profiles()
 
 lats = [prof.lat for prof in PROFS]
 lons = [prof.lon for prof in PROFS]
@@ -74,6 +75,7 @@ Y = [mean_surface_temps[x] for x in X]
 
 # Plots the means of the recorded surface temperatures over time
 #plt.plot(X, Y, color='red')
+#plt.show()
 
 # Appying a uniform kernel to make the Y data smoother
 number_days = 9
@@ -96,6 +98,7 @@ for ind in range(len(PROFS)) :
 
 # Plots the residuals after removing the influence of the day
 #plt.scatter(integer_dates, surface_temps_2)
+#plt.show()
 
 # Plots the temperature residuals against their latitudes
 #plt.scatter(lats, surface_temps_2)
@@ -113,7 +116,7 @@ for ind in range(len(PROFS)) :
     surface_temps_3.append(surface_temps_2[ind] - reg.predict(np.array([[lats[ind]]]))[0])
 
 # Plots the residual surface temperatures after removing the influences of the day and of the latitude
-plt.scatter(integer_dates, surface_temps_3)
+#plt.scatter(integer_dates, surface_temps_3)
 
 
 
@@ -131,14 +134,3 @@ print(f"Variance of surface temperature residuals : {var(surface_temp_residuals)
 
 
 #plt.show()
-
-
-
-
-
-
-
-
-
-
-

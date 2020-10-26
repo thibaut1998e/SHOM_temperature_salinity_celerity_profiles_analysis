@@ -1,74 +1,69 @@
 import numpy as np
-import pickle
-import  time
+import os
+from utils import *
+from plot_profile_locations import plot_data
 import matplotlib.pyplot as plt
 
-class Point():
-    def __init__(self, lon, lat, depth, date, temp=None, salt=None):
-        self.lon = lon
-        self.lat = lat
-        self.depth = depth
-        self.date = date #integer form of the date
-        self.temp = temp
-        self.salt = salt
 
-    def __str__(self):
-        return f' longitude {self.lon}, latitude {self.lat}, depth {self.depth}, date : {self.date}, ' \
-              f'temperature {self.temp}, salinity {self.salt}'
+def cartesian_product(x, y):
+    """In : x, y two 1d array
+    OUT : 2D array cartesian product af x and y"""
+    return np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
 
-    def distance_to(self, other):
-        return distance(self, other)
 
-    def gaussian_weights_interpolation(self, list_points, sigma):
-        """compute the value of temp and salt using interpolation with gaussian weights on the points in list_points
-        sigma : standard deviation of the gaussian
-        """
-        self.normalize()
-        for p in list_points:
-            p.normalize()
+def interpolation_map(data_long_lat, labels, const=0, lat_min=32, lat_max=44, lat_step=1, long_min=-4, long_max=35,
+                      long_step=1, threshold=15, sigma=15, title='', save_location=None):
+    """data_long_lat 2D array, shape (n_profiles, 2) data_long_lat[i][0] : longitudes, data_long_lat[i][1] : latitudes
+    labels : associated labels (either temperature or salinity)
+    const : constant to add to all the prediction """
+    longitudes = np.arange(long_min, long_max, long_step)
+    latitudes = np.arange(lat_min, lat_max, lat_step)
+    grid = cartesian_product(longitudes, latitudes)
+    print('len grid', len(grid))
+    values = np.zeros(len(grid))
+    for i, point in enumerate(grid):
+        print(i)
+        values[i] = gaussian_weight_interpolation(point, data_long_lat, labels, threshold, sigma) + const
+        print(values[i])
+    plot_data(grid.T[0], grid.T[1], values, show=False) # plot real data
+    labels = [label + const for label in labels]
+    plot_data(data_long_lat.T[0], data_long_lat.T[1], labels, title=title, save_location=save_location) #plot results of interpolation
 
-        weights = [gauss(self.distance_to(p), sigma) for p in list_points]
 
-        S = sum(weights)
-
-        weights = np.array([w/S for w in weights])
-        temps = np.array([p.temp for p in list_points])
-        salts = np.array([p.salt for p in list_points])
-        self.temp = temps.dot(weights.T)
-        self.salt = salts.dot(weights.T)
-
-    def gaussian_weights_interpolation_with_profiles(self, profiles, sigma):
-        list_points = []
-        for prof in profiles:
-            list_points = list_points + prof.get_list_of_points()
-        self.gaussian_weights_interpolation(list_points, sigma)
-
-    def normalize(self, min_long_lat=-4, max_long_lat=44, min_depth=0, max_depth=2500, min_date=0, max_date=365):
-        self.lon = (self.lon-min_long_lat)/(max_long_lat-min_long_lat)
-        self.lat = (self.lat-min_long_lat)/(max_long_lat-min_long_lat)
-        self.depth = (self.depth - min_depth)/(max_depth-min_depth)
-        self.date = (self.date - min_date)/(max_date - min_date)
+def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
+    """p point with 2 coordinate : p[0] latitude, p[1] longitude
+    X 2D array shape (N, d) N number of data point, d number of dimension (2 in our case longitude and latitude)
+    Y 1D array, shape N, associated labels
+    Threshold : only points closer than threshold are taken into acount in the interpolation
+    sigm : std of the gaussian kernel
+    returns the prdicted value for p (either temperature or salinity)"""
+    closest_point_values = []
+    weights = []
+    for i,x in enumerate(X):
+        dist = distance(p, x)
+        if dist < threshold:
+            w = gauss(dist, sigma)
+            weights.append(w)
+            closest_point_values.append(Y[i])
+    closest_point_values = np.array(closest_point_values)
+    S = sum(weights)
+    weights = np.array([w / S for w in weights])
+    y_pred = closest_point_values.dot(weights.T) #predicted value for p
+    return y_pred
 
 
 def gauss(x, sigma):
     return np.exp(-x**2/(2*sigma**2))/(sigma*np.sqrt(2*np.pi))
 
 
-def distance(p1, p2, coef_lon=1, coef_lat=1, coef_depth=1, coef_date=1, power=2):
-    dist = coef_lon*(p1.lon-p2.lon)**power + coef_lat*(p1.lat-p2.lat)**power + \
-           coef_depth*(p1.depth-p2.depth)**power + coef_date*(p1.date-p2.date)**power
+def distance(p1, p2, power=2):
+    dist = 0
+    for i in range(len(p1)):
+        dist += (p1[i]-p2[i])**power
     return dist**(1/power)
 
 
-def transform_string_date_into_integer(date):
-    """IN : string in the form AAAA-MM-JJ 00:00:00 representing a date
-    OUT : integer, day 1 is 2013-01-01"""
-    year, month, day = date.split('-')
-    day, _ = day.split(' ')
-    year, month, day = int(year), int(month), int(day)
-    lenght_of_months = [31,28,31,30,31,30,31,31,30,31,30,31]
-    x = 365*(year-2013) + sum(lenght_of_months[:month-1]) + day
-    return x
+
 
 
 def compute_profiles_statistics(profiles):
@@ -97,18 +92,23 @@ def compute_profiles_statistics(profiles):
 
 
 if __name__ == '__main__':
-    from plot_data import get_profiles, LIGHT_PROF
-    PROFS = get_profiles()
+    from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y
+    from utils import get_profiles, LIGHT_PROF
+    day = 25
+    lons = np.array(lons)
+    lats = np.array(lats)
+    surface_temps_2 = np.array(surface_temps_2)
+    smoothed_Y = np.array(smoothed_Y)
+    long_lat = np.array([lons, lats]).T
+    title = f'predicted surface temperatures in the Mediterranean Sea at day {day}'
+    save_location = f'map_mediterane_temperatures_day_{day}.png'
+    const = smoothed_Y[day-1]
+    interpolation_map(long_lat, surface_temps_2, const=const, title=title, save_location=save_location)
 
-    #plt.plot(range(len(PROFS)), [len(p.depth) for p in PROFS])
-    #plt.show()
-    compute_profiles_statistics(PROFS)
-    p = Point(lon=10, lat=35, depth=1000, date=150)
-    t = time.time()
-    p.gaussian_weights_interpolation_with_profiles(PROFS[:1000], sigma=1)
-    print('time to compute interpolation', time.time()-t)
-    print(f'estimated temperature', p.temp)
-    print('estimated salinity', p.salt)
+
+
+
+
 
 
 

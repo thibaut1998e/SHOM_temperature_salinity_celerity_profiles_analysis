@@ -1,0 +1,1 @@
+path_base_map = "C:/Users/Thibaut/anaconda3/pkgs/proj4-5.2.0-ha925a31_1/Library/share"

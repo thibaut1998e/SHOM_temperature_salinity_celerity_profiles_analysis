@@ -1,13 +1,10 @@
 import pickle
 import matplotlib.pyplot as plt
-from plot_data import LIGHT_PROF, get_profiles
-from Interpolation import transform_string_date_into_integer
+from utils import LIGHT_PROF, get_profiles
+from utils import transform_string_date_into_integer
 
 
-def day_number_to_period_of_year(day) :
-    while day > 365.25 :
-        day -= 365.25
-    return day
+
 
 if __name__ == '__main__':
     PROFS = get_profiles()
