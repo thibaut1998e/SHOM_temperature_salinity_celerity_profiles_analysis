@@ -7,7 +7,7 @@ from utils import *
 
 # load profiles
 
-PROFS = get_profiles()
+_, PROFS, valid_profs = get_profiles()
 
 lats = [prof.lat for prof in PROFS]
 lons = [prof.lon for prof in PROFS]

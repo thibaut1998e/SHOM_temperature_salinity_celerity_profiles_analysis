@@ -1,6 +1,6 @@
 import pickle
 import matplotlib.pyplot as plt
-from plot_data import LIGHT_PROF, get_profiles
+from utils import LIGHT_PROF, get_profiles
 
 
 PROFS = get_profiles()
@@ -12,7 +12,7 @@ plt.scatter(lons, lats, s=0.5)
 import os
 
 # Chemin à remplacer par l'emplacement du fichier epsg pour vous
-os.environ['PROJ_LIB'] = "C:/Users\\Anthony\Anaconda3\\pkgs\\proj4-5.2.0-ha925a31_1\\Library\\share"
+os.environ['PROJ_LIB'] = "C:/Users/Thibaut/anaconda3/pkgs/proj4-5.2.0-ha925a31_1/Library/share"
 
 # Pour installer basemap avec Anaconda : conda install -c anaconda basemap
 from mpl_toolkits.basemap import Basemap

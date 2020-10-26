@@ -37,7 +37,7 @@ def plot_profiles_surface_temp(PROFS):
 
 
 if __name__ == '__main__':
-    PROFS = get_profiles()
+    PROFS, _, _ = get_profiles()
     plot_profiles_surface_temp(PROFS)
 
 

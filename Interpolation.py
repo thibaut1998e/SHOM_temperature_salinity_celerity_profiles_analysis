@@ -2,29 +2,49 @@ import numpy as np
 import os
 from utils import *
 from plot_profile_locations import plot_data
-import matplotlib.pyplot as plt
 
 
+def interpolation_map(train_long_lat, labels, test_long_lat, const=0, threshold=15,
+                      sigma=15, title='', save_location=None, show=True):
+    """Make predictions on points in test_long_lat
+    train_long_lat, test_long_lat:  2D array, shape (n_profiles, 2) train_long_lat[i][0] : longitudes, train_long_lat[i][1] : latitudes
+    labels: associated labels (either temperature or salinity)
+    const : constant to add to all the prediction, depends on the day of the year
+    title : title of the map saved
+    save_location, if None the map is not saved ,
+    show : map is shown iff show
+
+    """
+    print(f'processing {len(test_long_lat)} test data')
+    test_predictions = [gaussian_weight_interpolation(p, train_long_lat, labels, threshold, sigma) + const for p in test_long_lat]
+    plot_data(test_long_lat.T[0], test_long_lat.T[1], test_predictions, show=False)  # plot real data
+    labels = [label + const for label in labels]
+    plot_data(train_long_lat.T[0], train_long_lat.T[1], labels, title=title, save_location=save_location,
+                  show=show)  # plot results of interpolation
 
 
+def interpolation_validation(train_long_lat, labels, valid_long_lat, valid_labels, valid_dates, average_temps,
+                             threshold=15, sigma=15):
+    """compute the average error of the interpolation on valid_long_lat"""
+    print(f'processing {len(valid_long_lat)} validation data')
 
-def interpolation_map(data_long_lat, labels, const=0, lat_min=32, lat_max=44, lat_step=1, long_min=-4, long_max=35,
-                      long_step=1, threshold=15, sigma=15, title='', save_location=None):
-    """data_long_lat 2D array, shape (n_profiles, 2) data_long_lat[i][0] : longitudes, data_long_lat[i][1] : latitudes
-    labels : associated labels (either temperature or salinity)
-    const : constant to add to all the prediction """
+    valid_predictions = [gaussian_weight_interpolation(p, train_long_lat, labels, threshold, sigma)
+                         + average_temps[valid_dates[i]] for i,p in enumerate(valid_long_lat)]
+    error = distance(valid_predictions, valid_labels, order=1) / len(valid_predictions)
+    print(valid_predictions)
+    print(valid_labels)
+    return error
+
+
+def make_grid(lat_min=32, lat_max=44, lat_step=1, long_min=-4, long_max=35,
+                      long_step=1):
     longitudes = np.arange(long_min, long_max, long_step)
     latitudes = np.arange(lat_min, lat_max, lat_step)
     grid = cartesian_product(longitudes, latitudes)
-    print('len grid', len(grid))
-    values = np.zeros(len(grid))
-    for i, point in enumerate(grid):
-        print(i)
-        values[i] = gaussian_weight_interpolation(point, data_long_lat, labels, threshold, sigma) + const
-        print(values[i])
-    plot_data(grid.T[0], grid.T[1], values, show=False) # plot real data
-    labels = [label + const for label in labels]
-    plot_data(data_long_lat.T[0], data_long_lat.T[1], labels, title=title, save_location=save_location) #plot results of interpolation
+    return grid
+
+
+cpt = 0
 
 
 def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
@@ -34,6 +54,10 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
     Threshold : only points closer than threshold are taken into acount in the interpolation
     sigm : std of the gaussian kernel
     returns the prdicted value for p (either temperature or salinity)"""
+    global cpt
+    cpt += 1
+    if cpt % 10 == 0:
+        print(cpt)
     closest_point_values = []
     weights = []
     for i,x in enumerate(X):
@@ -50,8 +74,8 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
 
 
 if __name__ == '__main__':
-    from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y
-    from utils import get_profiles, LIGHT_PROF
+    from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y, valid_profs
+    #from utils import get_profiles, LIGHT_PROF
     day = 25
     lons = np.array(lons)
     lats = np.array(lats)
@@ -61,7 +85,29 @@ if __name__ == '__main__':
     title = f'predicted surface temperatures in the Mediterranean Sea at day {day}'
     save_location = f'map_mediterane_temperatures_day_{day}.png'
     const = smoothed_Y[day-1]
-    interpolation_map(long_lat, surface_temps_2, const=const, title=title, save_location=save_location)
+    valid_lon = get_longs(valid_profs)
+    valid_lat = get_lats(valid_profs)
+    valid_temps = get_surf_temp(valid_profs)
+    valid_dates = get_date(valid_profs)
+    long_lat_valid = np.array([valid_lon, valid_lat]).T
+    grid = make_grid()
+    import time
+    t = time.time()
+    #interpolation_map(long_lat, surface_temps_2, grid, const=const, title=title, save_location=save_location, show=True)
+    #0.25s for one point on average
+    """
+    error = interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates, smoothed_Y)
+    print(error)
+    print('temps écoulé', time.time() - t)
+    """
+    errors_against_sigma = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
+                                                     ,smoothed_Y, sigma=sig, threshold=10**10) for sig in
+                            [0.01, 0.02, 0.05, 0.1, 0.5, 1, 2, 5, 10, 100]]
+    print(errors_against_sigma) #conclusion : error do not depend on sigma
+
+
+
+
 
 
 

@@ -7,7 +7,7 @@ from utils import transform_string_date_into_integer
 
 
 if __name__ == '__main__':
-    PROFS = get_profiles()
+    PROFS, _, _= get_profiles()
     lats = [prof.lat for prof in PROFS]
     lons = [prof.lon for prof in PROFS]
 

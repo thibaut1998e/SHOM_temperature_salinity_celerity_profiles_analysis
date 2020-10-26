@@ -36,10 +36,16 @@ def get_date(PROFS):
     return np.array([transform_string_date_into_integer(p.date) for p in PROFS])
 
 
-def get_profiles():
+def get_profiles(p=0.005):
+    #p = proportion of validation data
     with open('ts_profiles.pkl', 'rb') as f:
         PROFS = pickle.load(f)
-    return PROFS
+    np.random.shuffle(PROFS)
+    n = len(PROFS)
+    valid_PROFS = PROFS[:int(n*p)]
+    train_PROFS = PROFS[int(n*p):]
+    return PROFS, train_PROFS, valid_PROFS
+
 
 
 def day_number_to_period_of_year(day) :
@@ -70,11 +76,11 @@ def gauss(x, sigma):
     return np.exp(-x**2/(2*sigma**2))/(sigma*np.sqrt(2*np.pi))
 
 
-def distance(p1, p2, power=2):
+def distance(p1, p2, order=2):
     dist = 0
     for i in range(len(p1)):
-        dist += (p1[i]-p2[i])**power
-    return dist**(1/power)
+        dist += abs(p1[i]-p2[i])**order
+    return dist**(1/order)
 
 
 def compute_profiles_statistics(profiles):
