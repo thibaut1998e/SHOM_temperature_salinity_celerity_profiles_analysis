@@ -29,7 +29,7 @@ def interpolation_validation(train_long_lat, labels, valid_long_lat, valid_label
     print(f'processing {len(valid_long_lat)} validation data')
 
     valid_predictions = [gaussian_weight_interpolation(p, train_long_lat, labels, threshold, sigma)
-                         + average_temps[valid_dates[i]] for i,p in enumerate(valid_long_lat)]
+                         + average_temps[valid_dates[i]-1] for i,p in enumerate(valid_long_lat)]
     error = distance(valid_predictions, valid_labels, order=1) / len(valid_predictions)
     print(valid_predictions)
     print(valid_labels)
@@ -76,10 +76,14 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
 if __name__ == '__main__':
     from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y, valid_profs
     #from utils import get_profiles, LIGHT_PROF
+
+
     day = 25
     lons = np.array(lons)
     lats = np.array(lats)
     surface_temps_2 = np.array(surface_temps_2)
+    print('mean of residuals (without removing lat influence)', np.mean(surface_temps_2))
+    print('std of residuals (without removing lat influence)', np.std(surface_temps_2))
     smoothed_Y = np.array(smoothed_Y)
     long_lat = np.array([lons, lats]).T
     title = f'predicted surface temperatures in the Mediterranean Sea at day {day}'
@@ -101,8 +105,7 @@ if __name__ == '__main__':
     print('temps écoulé', time.time() - t)
     """
     errors_against_sigma = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
-                                                     ,smoothed_Y, sigma=sig, threshold=10**10) for sig in
-                            [0.01, 0.02, 0.05, 0.1, 0.5, 1, 2, 5, 10, 100]]
+                                                     ,smoothed_Y, sigma=sig, threshold=10**10) for sig in [1]]
     print(errors_against_sigma) #conclusion : error do not depend on sigma
 
 
