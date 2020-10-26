@@ -100,6 +100,13 @@ def compute_profiles_statistics(profiles):
     print('min depths', min_depths)
     return min_long_lat, max_long_lat, min_depths, max_depths, min(dates), max(dates)
 
+def mean(L) :
+    return sum(L) / len(L)
+
+def var(L) :
+    m = mean(L)
+    return mean([(x - m) **2 for x in L])
+
 
 
 

@@ -119,14 +119,6 @@ for ind in range(len(PROFS)) :
 #plt.scatter(integer_dates, surface_temps_3)
 
 
-
-def mean(L) :
-    return sum(L) / len(L)
-
-def var(L) :
-    m = mean(L)
-    return mean([(x - m) **2 for x in L])
-
 surface_temp_residuals = surface_temps_3
 
 print(f"Mean of surface temperature residuals : {mean(surface_temp_residuals)}")
