@@ -5,10 +5,7 @@ from plot_profile_locations import plot_data
 import matplotlib.pyplot as plt
 
 
-def cartesian_product(x, y):
-    """In : x, y two 1d array
-    OUT : 2D array cartesian product af x and y"""
-    return np.transpose([np.tile(x, len(y)), np.repeat(y, len(x))])
+
 
 
 def interpolation_map(data_long_lat, labels, const=0, lat_min=32, lat_max=44, lat_step=1, long_min=-4, long_max=35,
@@ -50,45 +47,6 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
     weights = np.array([w / S for w in weights])
     y_pred = closest_point_values.dot(weights.T) #predicted value for p
     return y_pred
-
-
-def gauss(x, sigma):
-    return np.exp(-x**2/(2*sigma**2))/(sigma*np.sqrt(2*np.pi))
-
-
-def distance(p1, p2, power=2):
-    dist = 0
-    for i in range(len(p1)):
-        dist += (p1[i]-p2[i])**power
-    return dist**(1/power)
-
-
-
-
-
-def compute_profiles_statistics(profiles):
-    lats = np.array([prof.lat for prof in profiles])
-    longs = np.array([prof.lon for prof in profiles])
-    dates = np.array([transform_string_date_into_integer(str(prof.date)) for prof in profiles])
-    depths = np.array([prof.depth for prof in profiles])
-    min_long_lat = min(min(longs), min(lats))
-    max_long_lat = max(max(longs), max(lats))
-    max_depths = max([max(d) for d in depths])
-    min_depths = min([min(d) for d in depths])
-    print('min longitude', min(longs))
-    print('max longitude', max(longs))
-    print('min latitude', min(lats))
-    print('max latitude', max(lats))
-    print('max depths', max_depths)
-    print('min depths', min_depths)
-
-    return min_long_lat, max_long_lat, min_depths, max_depths, min(dates), max(dates)
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
