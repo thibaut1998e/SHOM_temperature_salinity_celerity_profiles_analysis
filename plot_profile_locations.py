@@ -15,7 +15,7 @@ def plot_data(longs, lats, labels, show=True, title='', save_location=None):
     """In: longs, lats : longitudes and latitudes 1D array (or list) shape (nb_profiles)
      labels : 1D array shape (or list) (nb_profile) associated labels (either temperature or salinity)"""
     import os
-    os.environ['PROJ_LIB'] = path_base_map
+    os.environ['PROJ_LIB'] = path_base_map #change this variable to your corresponding path in file path.py
     from mpl_toolkits.basemap import Basemap
     plt.scatter(longs, lats, s=0.5, c=labels)
     plt.colorbar()
