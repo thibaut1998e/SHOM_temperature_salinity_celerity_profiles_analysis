@@ -24,12 +24,16 @@ def interpolation_map(train_long_lat, labels, test_long_lat, const=0, threshold=
 
 
 def interpolation_validation(train_long_lat, labels, valid_long_lat, valid_labels, valid_dates, average_temps,
-                             threshold=15, sigma=15):
+                             threshold=15, sigma=15, lat_reg=None):
     """compute the average error of the interpolation on valid_long_lat"""
     print(f'processing {len(valid_long_lat)} validation data')
-
+    global cpt
+    cpt = 0
     valid_predictions = [gaussian_weight_interpolation(p, train_long_lat, labels, threshold, sigma)
                          + average_temps[valid_dates[i]-1] for i,p in enumerate(valid_long_lat)]
+    if lat_reg != None :
+      for i,p in enumerate(valid_long_lat) :
+            valid_predictions[i] += lat_reg.predict(np.array([[p[1]]]))[0]
     error = distance(valid_predictions, valid_labels, order=1) / len(valid_predictions)
     print(valid_predictions)
     print(valid_labels)
@@ -74,7 +78,7 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
 
 
 if __name__ == '__main__':
-    from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y, valid_profs
+    from temperature_residuals import surface_temps_2, surface_temps_3, lons, lats, smoothed_Y, valid_profs, reg
     #from utils import get_profiles, LIGHT_PROF
 
 
@@ -104,11 +108,13 @@ if __name__ == '__main__':
     print(error)
     print('temps écoulé', time.time() - t)
     """
-    errors_against_sigma = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
+    errors_against_sigma_2 = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
                                                      ,smoothed_Y, sigma=sig, threshold=10**10) for sig in [1]]
-    print(errors_against_sigma) #conclusion : error do not depend on sigma
-
-
+    errors_against_sigma_3 = [interpolation_validation(long_lat, surface_temps_3, long_lat_valid, valid_temps, valid_dates
+                                                     ,smoothed_Y, sigma=sig, threshold=10**10, lat_reg=reg) for sig in [1]]
+    #print(errors_against_sigma) #conclusion : error do not depend on sigma
+    print(f"Mean error with residuals surface_temps_2 : {errors_against_sigma_2})
+    print(f"Mean error with residuals surface_temps_3 : {errors_against_sigma_3})
 
 
 
