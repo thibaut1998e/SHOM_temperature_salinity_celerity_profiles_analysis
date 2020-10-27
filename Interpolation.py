@@ -7,6 +7,7 @@ from plot_profile_locations import plot_data
 def interpolation_map(train_long_lat, labels, test_long_lat, const=0, threshold=15,
                       sigma=15, title='', save_location=None, show=True):
     """Make predictions on points in test_long_lat
+    plot the map with the predictions
     train_long_lat, test_long_lat:  2D array, shape (n_profiles, 2) train_long_lat[i][0] : longitudes, train_long_lat[i][1] : latitudes
     labels: associated labels (either temperature or salinity)
     const : constant to add to all the prediction, depends on the day of the year
@@ -24,28 +25,22 @@ def interpolation_map(train_long_lat, labels, test_long_lat, const=0, threshold=
 
 
 def interpolation_validation(train_long_lat, labels, valid_long_lat, valid_labels, valid_dates, average_temps,
-                             threshold=15, sigma=15, lat_reg=None):
+                             threshold=15, sigma=15):
     """compute the average error of the interpolation on valid_long_lat"""
     print(f'processing {len(valid_long_lat)} validation data')
-    global cpt
-    cpt = 0
+
     valid_predictions = [gaussian_weight_interpolation(p, train_long_lat, labels, threshold, sigma)
                          + average_temps[valid_dates[i]-1] for i,p in enumerate(valid_long_lat)]
-    if lat_reg != None :
-      for i,p in enumerate(valid_long_lat) :
-            valid_predictions[i] += lat_reg.predict(np.array([[p[1]]]))[0]
-    error = distance(valid_predictions, valid_labels, order=1) / len(valid_predictions)
+
+    errors = np.abs(np.array(valid_predictions)-np.array(valid_labels))
     print(valid_predictions)
     print(valid_labels)
-    return error
+    mean_error = np.mean(errors)
+    std_error = np.std(errors)
+    print('std error', std_error)
+    print('max error', max(errors))
+    return errors, mean_error, std_error
 
-
-def make_grid(lat_min=32, lat_max=44, lat_step=1, long_min=-4, long_max=35,
-                      long_step=1):
-    longitudes = np.arange(long_min, long_max, long_step)
-    latitudes = np.arange(lat_min, lat_max, lat_step)
-    grid = cartesian_product(longitudes, latitudes)
-    return grid
 
 
 cpt = 0
@@ -77,8 +72,11 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
     return y_pred
 
 
+
+
+
 if __name__ == '__main__':
-    from temperature_residuals import surface_temps_2, surface_temps_3, lons, lats, smoothed_Y, valid_profs, reg
+    from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y, valid_profs
     #from utils import get_profiles, LIGHT_PROF
 
 
@@ -108,13 +106,12 @@ if __name__ == '__main__':
     print(error)
     print('temps écoulé', time.time() - t)
     """
-    errors_against_sigma_2 = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
-                                                     ,smoothed_Y, sigma=sig, threshold=10**10) for sig in [1]]
-    errors_against_sigma_3 = [interpolation_validation(long_lat, surface_temps_3, long_lat_valid, valid_temps, valid_dates
-                                                     ,smoothed_Y, sigma=sig, threshold=10**10, lat_reg=reg) for sig in [1]]
-    #print(errors_against_sigma) #conclusion : error do not depend on sigma
-    print(f"Mean error with residuals surface_temps_2 : {errors_against_sigma_2})
-    print(f"Mean error with residuals surface_temps_3 : {errors_against_sigma_3})
+    list_sigma = [0.01, 0.02, 0.05, 0.1,0.2, 0.5, 1]
+    errors_against_sigma = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
+                                                     ,smoothed_Y, sigma=sig, threshold=10**10)[1] for sig in list_sigma]
+    print('error for differnt values of sigma', errors_against_sigma) #conclusion : error do not depend on sigma
+
+
 
 
 
