@@ -24,6 +24,7 @@ for i in range(len(PROFS)) :
         good_data.append(PROFS[i])
 
 PROFS = good_data
+PROFS.sort(key = lambda prof: transform_string_date_into_integer(str(prof.date)))
 lats = [prof.lat for prof in PROFS]
 lons = [prof.lon for prof in PROFS]
 surface_temps = [prof.temp[-1] for prof in PROFS]
