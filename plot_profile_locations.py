@@ -8,15 +8,19 @@ from utils import LIGHT_PROF, get_profiles
 import pickle
 import matplotlib.pyplot as plt
 from path import path_base_map
+import numpy as np
+
 
 
 # profiles class
-def plot_data(longs, lats, labels, show=True, title='', save_location=None):
+def plot_data(longs, lats, labels, show=True, title='', save_location=None, color_log_scale=False):
     """In: longs, lats : longitudes and latitudes 1D array (or list) shape (nb_profiles)
      labels : 1D array shape (or list) (nb_profile) associated labels (either temperature or salinity)"""
     import os
     os.environ['PROJ_LIB'] = path_base_map #change this variable to your corresponding path in file path.py
     from mpl_toolkits.basemap import Basemap
+    if color_log_scale:
+        labels = np.log(labels)
     plt.scatter(longs, lats, s=0.5, c=labels)
     plt.colorbar()
     plt.title(title)

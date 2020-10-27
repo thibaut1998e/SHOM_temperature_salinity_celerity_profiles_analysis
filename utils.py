@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 import os
+import  matplotlib.pyplot as plt
 
 
 #HelloWorld
@@ -190,21 +191,7 @@ def var(L) :
     m = mean(L)
     return mean([(x - m) **2 for x in L])
 
-"""
-def get_density(long, lat):
-    
-    point = np.array([long, lat])
-    nearest_idx = 0
-    min_dist = 10 ** 10
 
-    for i, p in enumerate(grid):
-        dist = distance(p, point)
-        if dist < min_dist:
-            nearest_idx = i
-            min_dist = dist
-    return densities[nearest_idx]
-
-"""
 
 
 if __name__ == '__main__':
@@ -217,6 +204,13 @@ if __name__ == '__main__':
     point = np.array([long, lat])
     density_at_point = density_profiles_nn_interpolation(long_lats, densities, point)
     print(f'the density of profiles at point {point} is : {density_at_point}')
+    from plot_profile_locations import plot_data
+    print('plot profiles densities')
+    plot_data(long_lats.T[0], long_lats.T[1], densities, color_log_scale=True, title='density of profiles (log scale)',
+              save_location='density_of_profiles')
+
+
+
 
 
 
