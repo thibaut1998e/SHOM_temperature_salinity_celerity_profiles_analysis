@@ -24,8 +24,8 @@ def plot_data(longs, lats, labels, show=True, title='', save_location=None, colo
     plt.scatter(longs, lats, s=0.5, c=labels)
     plt.xlabel('longitudes')
     plt.ylabel('latitudes')
-    plt.xticks(np.arange(-10, 26, 1)) #graduation of axes do not work
-    plt.yticks(np.arange(40, 51, 1))
+    plt.xticks(np.arange(-10, 40, 1)) #graduation of axes do not work
+    plt.yticks(np.arange(25, 50, 1))
     plt.grid()
     plt.colorbar()
     plt.title(title)
