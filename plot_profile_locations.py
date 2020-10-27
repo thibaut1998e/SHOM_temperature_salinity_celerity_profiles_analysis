@@ -22,6 +22,11 @@ def plot_data(longs, lats, labels, show=True, title='', save_location=None, colo
     if color_log_scale:
         labels = np.log(labels)
     plt.scatter(longs, lats, s=0.5, c=labels)
+    plt.xlabel('longitudes')
+    plt.ylabel('latitudes')
+    plt.xticks(np.arange(-10, 40, 1)) #graduation of axes do not work
+    plt.yticks(np.arange(25, 50, 1))
+    plt.grid()
     plt.colorbar()
     plt.title(title)
     map = Basemap(llcrnrlon=-10, llcrnrlat=25, urcrnrlon=40, urcrnrlat=50)
