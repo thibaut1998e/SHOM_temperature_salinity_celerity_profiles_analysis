@@ -106,25 +106,16 @@ def read_density_txt(txt_path='profile_density.txt'):
     return np.array(longs_lats), np.array(densities)
 
 
-def density_profiles_nn_interpolation(long_lats, profile_densities, point, long_step=0.1, lat_step=0.1):
+def density_profiles_nn_interpolation(profile_densities, point,
+                                      long_min=-4, long_max=35, long_step=0.1, lat_min=32, lat_step=0.1):
     """returns the density of profiles at any point on the map, by finding the nearest neighbour of the point
-    it assumes that long_lats is a grid defined by long_step ans lat_step.
+    it assumes that the grid of profile_densities is defined by long_min, long_max, long_step, lat_min, lat_max, lat_step.
     ex : point [5.87, 41.23] : it will return the density of profile at location [5.9, 41.2]"""
-    nearest_neighb = [int(point[0]/long_step+0.5)*long_step, int(point[1]/lat_step+0.5)*lat_step]
-    nn_in_long_lats = False
-    idx = 0
-    eps = 10**-5
-    for i,p in enumerate(long_lats):
-        long, lat = p
-        if abs(long - nearest_neighb[0]) < eps and abs(lat - nearest_neighb[1]) < eps:
-            idx = i
-            nn_in_long_lats = True
-            break
-    if not nn_in_long_lats:
-        print(f'given point {point}, nearest neighbour {nearest_neighb} was not find in the list '
-              f'long_lat')
-        exit()
+    long_nn, lat_nn = int(point[0]/long_step+0.5)*long_step, int(point[1]/lat_step+0.5)*lat_step
+    idx = (lat_nn - lat_min)/lat_step * (long_max-long_min)/long_step + (long_nn - long_min)/long_step
+    idx = int(idx)
     return profile_densities[idx]
+
 
 
 
@@ -199,10 +190,11 @@ if __name__ == '__main__':
     PROFS, _, _ = get_profiles()
     #density_profiles(PROFS, radius=1, lat_step=0.1, long_step=0.1) #save txt file with densities on a grid
     long_lats, densities = read_density_txt() #get the saved values of densities
-    long = 5.13
-    lat = 41.12
+    long = 22.31
+    lat = 34.65
     point = np.array([long, lat])
-    density_at_point = density_profiles_nn_interpolation(long_lats, densities, point)
+    density_at_point = density_profiles_nn_interpolation(densities, point)
+
     print(f'the density of profiles at point {point} is : {density_at_point}')
     from plot_profile_locations import plot_data
     print('plot profiles densities')
