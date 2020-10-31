@@ -221,21 +221,23 @@ def plot_density_histogram(PROFS, density_grid, title, range=None):
 
 
 if __name__ == '__main__':
-
+    from plot_profile_locations import plot_data
     #PROFS, _, _ = get_profiles()
     #density_profiles(PROFS, radius=1, lat_step=0.1, long_step=0.1) #save txt file with densities on a gridy
     long_lats, densities = read_density_txt() #get the saved values of densities
     print('début')
-    _, _, valid_PROFS = get_profiles(density_grid=densities)
+    PROFS, _, valid_PROFS = get_profiles(density_grid=densities)
     plot_density_histogram(valid_PROFS, densities,
                            title='validation profile densities with probability selection inversly proportional to density',
                            range=(0, 50))
-    _, _, valid_PROFS = get_profiles()
+
+    plot_data(get_longs(PROFS), get_lats(PROFS), [1 if p in valid_PROFS else 0 for p in PROFS],
+              title='validation data location with probability of selction inversly proportional to density')
+    PROFS, _, valid_PROFS = get_profiles()
     plot_density_histogram(valid_PROFS, densities,
                            title='validation profile densities with uniform probability of selection')
-
-
-
+    plot_data(get_longs(PROFS), get_lats(PROFS), [1 if p in valid_PROFS else 0 for p in PROFS],
+              title='validation data location with uniform probability of selction')
 
 
     long = 22.31
@@ -244,7 +246,7 @@ if __name__ == '__main__':
     density_at_point = density_profiles_nn_interpolation(densities, point)
     
     print(f'the density of profiles at point {point} is : {density_at_point}')
-    from plot_profile_locations import plot_data
+
     print('plot profiles densities')
 
     plot_data(long_lats.T[0], long_lats.T[1], densities, color_log_scale=True, title='density of profiles (log scale)',
@@ -252,9 +254,9 @@ if __name__ == '__main__':
 
     longs = np.arange(-4, 35, 0.01)
     points = [[long, 38] for long in longs]
-    plt.plot(longs, [density_profiles_nn_interpolation(densities, p) for p in points])
+    plt.plot(longs, [density_profiles_nn_interpolation(densities, p) for p in points]) #plot profiles density at lat 38
     plt.show()
-    
+
 
 
 
