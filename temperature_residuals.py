@@ -3,9 +3,8 @@ import pickle
 import matplotlib.pyplot as plt
 from utils import *
 
-plot = False
-if __name__ == '__main__':
-    plot = True
+
+plot = (__name__ == '__main__')
 
 # load profiles
 
@@ -129,11 +128,18 @@ X = np.array(lats).reshape(-1, 1)
 y = np.array(surface_temps_2)
 reg = LinearRegression().fit(X, y)
 # Plots the temperature residuals against their latitudes
+
 if plot:
     plt.scatter(lats, surface_temps_2)
     plt.plot(X, reg.predict(X), color='red', label='fitted linear regression model')
     plt.title('temperature residuals (after removing the influence of the day) against their latitudes')
     plt.xlabel('latitude')
+    plt.ylabel('Temperature residuals (°C)')
+    plt.show()
+
+    plt.scatter(lons, surface_temps_2)
+    plt.title('temperature residuals (after removing the influence of the day) against their longitude')
+    plt.xlabel('longitude')
     plt.ylabel('Temperature residuals (°C)')
     plt.show()
 
@@ -151,8 +157,15 @@ if plot:
     plt.ylabel('Temperature residuals (°C)')
     plt.show()
 
+    plt.scatter(lons, surface_temps_3)
+    plt.title('temperature residuals after removing the influence of the day and the latitude against their longitude')
+    plt.xlabel('longitude')
+    plt.ylabel('Temperature residuals (°C)')
+    plt.show()
+
 
 surface_temp_residuals = surface_temps_3
+
 
 print(f"Mean of surface temperature residuals : {mean(surface_temp_residuals)}")
 print(f"Variance of surface temperature residuals : {var(surface_temp_residuals)}")
