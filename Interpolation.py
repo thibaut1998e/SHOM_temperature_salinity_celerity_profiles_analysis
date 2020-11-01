@@ -33,12 +33,8 @@ def interpolation_validation(train_long_lat, labels, valid_long_lat, valid_label
                          + average_temps[valid_dates[i]-1] for i,p in enumerate(valid_long_lat)]
 
     errors = np.abs(np.array(valid_predictions)-np.array(valid_labels))
-    print(valid_predictions)
-    print(valid_labels)
     mean_error = np.mean(errors)
     std_error = np.std(errors)
-    print('std error', std_error)
-    print('max error', max(errors))
     return errors, mean_error, std_error
 
 
@@ -78,8 +74,6 @@ def gaussian_weight_interpolation(p, X, Y, threshold, sigma):
 if __name__ == '__main__':
     from temperature_residuals import surface_temps_2, lons, lats, smoothed_Y, valid_profs
     #from utils import get_profiles, LIGHT_PROF
-
-
     day = 25
     lons = np.array(lons)
     lats = np.array(lats)
@@ -106,10 +100,20 @@ if __name__ == '__main__':
     print(error)
     print('temps écoulé', time.time() - t)
     """
-    list_sigma = [0.01, 0.02, 0.05, 0.1,0.2, 0.5, 1]
+    list_sigma = [0.01, 0.02, 0.05, 0.07, 0.1, 0.2, 0.5, 0.7, 1, 2, 5, 7, 10, 20]
+
     errors_against_sigma = [interpolation_validation(long_lat, surface_temps_2, long_lat_valid, valid_temps, valid_dates
                                                      ,smoothed_Y, sigma=sig, threshold=10**10)[1] for sig in list_sigma]
-    print('error for differnt values of sigma', errors_against_sigma) #conclusion : error do not depend on sigma
+
+    plt.plot(list_sigma, errors_against_sigma)
+
+    plt.title('error against sigma with validation data selected with uniform distribution')
+    plt.ylabel('mean error (L1) (°C)')
+    plt.xlabel('sigma : standard deviation of gaussian kernel use to compute weights')
+    plt.xscale('log')
+    plt.show()
+
+    print('error for differnt values of sigma', errors_against_sigma)
 
 
 

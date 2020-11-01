@@ -3,19 +3,20 @@ import pickle
 import matplotlib.pyplot as plt
 from utils import *
 
-
+plot = False
+if __name__ == '__main__':
+    plot = True
 
 # load profiles
 
 _, PROFS, valid_profs = get_profiles()
 
-lats = [prof.lat for prof in PROFS]
-lons = [prof.lon for prof in PROFS]
+lats = get_lats(PROFS)
+lons = get_longs(PROFS)
+surface_temps = get_surf_temp(PROFS)
 
-surface_temps = [prof.temp[-1] for prof in PROFS]
-
-dates = [prof.date for prof in PROFS]
-integer_dates = [transform_string_date_into_integer(str(date)) for date in dates]
+#dates = [prof.date for prof in PROFS]
+integer_dates = get_date(PROFS)
 
 # Removing a few disturbing data
 good_data = []
@@ -25,15 +26,22 @@ for i in range(len(PROFS)) :
 
 PROFS = good_data
 PROFS.sort(key = lambda prof: transform_string_date_into_integer(str(prof.date)))
-lats = [prof.lat for prof in PROFS]
-lons = [prof.lon for prof in PROFS]
-surface_temps = [prof.temp[-1] for prof in PROFS]
-dates = [prof.date for prof in PROFS]
-integer_dates = [transform_string_date_into_integer(str(date)) for date in dates]
+lats = get_lats(PROFS)
+lons = get_longs(PROFS)
+surface_temps = get_surf_temp(PROFS)
+integer_dates = get_date(PROFS)
 
 
 # Plots all the surface temperatures recorded on the time axis
-#plt.scatter(integer_dates, surface_temps)
+if plot:
+    plt.scatter(integer_dates, surface_temps)
+    plt.title('surface temperatures recorded on the time axis')
+    plt.xlabel('time (idx of days)')
+    plt.ylabel('surface temperature (°C)')
+    plt.show()
+
+
+
 
 n = len(PROFS)
 i = 1
@@ -74,9 +82,7 @@ for (i, j) in missing_ranges :
 X = [i for i in range(1, 366)]
 Y = [mean_surface_temps[x] for x in X]
 
-# Plots the means of the recorded surface temperatures over time
-#plt.plot(X, Y, color='red')
-#plt.show()
+
 
 # Appying a uniform kernel to make the Y data smoother
 number_days = 9
@@ -88,8 +94,17 @@ for d in range(number_days // 2, len(Y) - number_days // 2) :
 for d in range(number_days // 2) :
     smoothed_Y.append(Y[len(Y) - number_days // 2 + d])
 
-# Plots the smoothed average of surface temperature over time
-#plt.plot(X, smoothed_Y, color='orange')
+
+if plot:
+    # Plots the means of the recorded surface temperatures over time
+    plt.plot(X, Y, color='red', label='real mean')
+    # Plots the smoothed average of surface temperature over time
+    plt.plot(X, smoothed_Y, color='orange', label='smoothed mean')
+    plt.title('mean of recorded surface temperature over time')
+    plt.xlabel('time (day idx)')
+    plt.ylabel('T (°C)')
+    plt.legend()
+    plt.show()
 
 # Creates residuals by removing the estimated influence of the day to the raw surface temperature data
 surface_temps_2 = []
@@ -98,26 +113,43 @@ for ind in range(len(PROFS)) :
     surface_temps_2.append(prof.temp[-1] - smoothed_Y[integer_dates[ind]-1])
 
 # Plots the residuals after removing the influence of the day
-#plt.scatter(integer_dates, surface_temps_2)
-#plt.show()
+if plot:
+    plt.scatter(integer_dates, surface_temps_2)
+    plt.title('residuals after removing the influence of the day')
+    plt.xlabel('time (day idx)')
+    plt.ylabel('Temperature residuals (°C)')
+    plt.show()
 
-# Plots the temperature residuals against their latitudes
-#plt.scatter(lats, surface_temps_2)
+
+
+
 import numpy as np
 from sklearn.linear_model import LinearRegression
 X = np.array(lats).reshape(-1, 1)
 y = np.array(surface_temps_2)
 reg = LinearRegression().fit(X, y)
+# Plots the temperature residuals against their latitudes
+if plot:
+    plt.scatter(lats, surface_temps_2)
+    plt.plot(X, reg.predict(X), color='red', label='fitted linear regression model')
+    plt.title('temperature residuals (after removing the influence of the day) against their latitudes')
+    plt.xlabel('latitude')
+    plt.ylabel('Temperature residuals (°C)')
+    plt.show()
 
-#plt.plot(X, reg.predict(X))
 
 # Creates residuals by removing the estimated influence of the latitude from the previous residuals
 surface_temps_3 = []
 for ind in range(len(PROFS)) :
     surface_temps_3.append(surface_temps_2[ind] - reg.predict(np.array([[lats[ind]]]))[0])
 
-# Plots the residual surface temperatures after removing the influences of the day and of the latitude
-#plt.scatter(integer_dates, surface_temps_3)
+if plot:
+    # Plots the residual surface temperatures after removing the influences of the day and of the latitude
+    plt.scatter(integer_dates, surface_temps_3)
+    plt.title('residual surface temperatures after removing the influences of the day and of the latitude')
+    plt.xlabel('time (day idx)')
+    plt.ylabel('Temperature residuals (°C)')
+    plt.show()
 
 
 surface_temp_residuals = surface_temps_3
