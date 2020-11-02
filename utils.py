@@ -176,7 +176,7 @@ def density_profiles_nn_interpolation(profile_densities, point,
     return profile_densities[idx]
 
 
-def get_profiles(file='ts_profiles.pkl', p=0.05, density_grid=None):
+def get_profiles(file='ts_profiles.pkl', p=0.01, density_grid=None, proba='sqrt'):
     """return the list of profiles in file and two set train_PROFS an valid_PROFS
      if density_grid is None it selects the profiles in valid_PROFS following an uniform probability distribution
      otherwise each profile is selected with a probability inversly proportional to the density of profiles at its location
@@ -194,15 +194,23 @@ def get_profiles(file='ts_profiles.pkl', p=0.05, density_grid=None):
         nb_validation = n*p
         long_lats = get_long_lats(PROFS)
         densities = [density_profiles_nn_interpolation(density_grid, p) for p in long_lats]
-        C = nb_validation/sum([1/d for d in densities]) #we choose C such that the expectation of the number of validation
-        #profiles is nb_validation = number of profiles * proportion of validation data
+        print(f"Mean density over all points : {mean(densities)}")
+        if proba == 'proportional' :
+            C = nb_validation/sum([1/d for d in densities]) #we choose C such that the expectation of the number of validation
+            #profiles is nb_validation = number of profiles * proportion of validation data
+        elif proba == 'sqrt' :
+            C = nb_validation/sum([1/np.sqrt(d) for d in densities])
         valid_PROFS = []
         valid_PROFS_idx = []
         for i in range(len(PROFS)):
-            select_prob = C/densities[i]
+            if proba == 'proportional' :
+                select_prob = C/densities[i]
+            elif proba == 'sqrt' :
+                select_prob = C / np.sqrt(densities[i])
             if rd.random() < select_prob:
                 valid_PROFS_idx.append(i)
                 valid_PROFS.append(PROFS[i])
+        print(f"Mean density over the validation set : {mean([densities[ind] for ind in valid_PROFS_idx])}")
         train_PROFS = [PROFS[idx] for idx in range(n) if idx not in valid_PROFS_idx]
     print('number of validation profiles', len(valid_PROFS))
     return PROFS, train_PROFS, valid_PROFS
