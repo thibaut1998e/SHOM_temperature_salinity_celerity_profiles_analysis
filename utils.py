@@ -1,10 +1,12 @@
 import pickle
 import numpy as np
 import os
-import  matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import random as rd
+import gsw
 
-#HelloWorld
+
+# HelloWorld
 # profiles class
 class LIGHT_PROF():
     def __init__(self, temp, salt, depth, lon, lat, date):
@@ -17,6 +19,9 @@ class LIGHT_PROF():
 
     def surface_temp(self):
         return self.temp[-1]
+
+    def get_sound_speed(self):
+        return gsw.density.sound_speed(self.temp, self.salt, [0]*len(self.temp))
 
 
 def get_long_lats(PROFS):
@@ -44,22 +49,16 @@ def get_date(PROFS):
     return np.array([transform_string_date_into_integer(p.date) for p in PROFS])
 
 
-
 def make_grid(lat_min=31, lat_max=45, lat_step=1, long_min=-4, long_max=35,
-                      long_step=1):
+              long_step=1):
     longitudes = np.arange(long_min, long_max, long_step)
     latitudes = np.arange(lat_min, lat_max, lat_step)
     grid = cartesian_product(longitudes, latitudes)
     return grid
 
 
-
-
-
-
-
-def day_number_to_period_of_year(day) :
-    while day > 365.25 :
+def day_number_to_period_of_year(day):
+    while day > 365.25:
         day -= 365.25
     return day
 
@@ -71,8 +70,8 @@ def transform_string_date_into_integer(date):
     year, month, day = date.split('-')
     day, _ = day.split(' ')
     year, month, day = int(year), int(month), int(day)
-    lenght_of_months = [31,28,31,30,31,30,31,31,30,31,30,31]
-    x = 365*(year-2013) + sum(lenght_of_months[:month-1]) + day
+    lenght_of_months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    x = 365 * (year - 2013) + sum(lenght_of_months[:month - 1]) + day
     return x
 
 
@@ -85,14 +84,14 @@ def cartesian_product(x, y):
 
 
 def gauss(x, sigma):
-    return np.exp(-x**2/(2*sigma**2))/(sigma*np.sqrt(2*np.pi))
+    return np.exp(-x ** 2 / (2 * sigma ** 2)) / (sigma * np.sqrt(2 * np.pi))
 
 
 def distance(p1, p2, order=2):
     dist = 0
     for i in range(len(p1)):
-        dist += abs(p1[i]-p2[i])**order
-    return dist**(1/order)
+        dist += abs(p1[i] - p2[i]) ** order
+    return dist ** (1 / order)
 
 
 def compute_profiles_statistics(profiles):
@@ -113,13 +112,14 @@ def compute_profiles_statistics(profiles):
     return min_long_lat, max_long_lat, min_depths, max_depths, min(dates), max(dates)
 
 
-def mean(L) :
+def mean(L):
     return sum(L) / len(L)
 
 
-def var(L) :
+def var(L):
     m = mean(L)
-    return mean([(x - m) **2 for x in L])
+    return mean([(x - m) ** 2 for x in L])
+
 
 def density_profiles(PROFS, radius=1, save_loc='profile_density.txt', **args_grid):
     """save the densities of profiles in the file save location
@@ -144,7 +144,7 @@ def density_profiles(PROFS, radius=1, save_loc='profile_density.txt', **args_gri
         for p in long_lats:
             if distance(point, p) < radius:
                 nb_points += 1
-        d = nb_points / (np.pi*radius**2)
+        d = nb_points / (np.pi * radius ** 2)
         long, lat = point
         print(f'{long}\t{lat}\t{d}', file=f)
 
@@ -170,8 +170,8 @@ def density_profiles_nn_interpolation(profile_densities, point,
     it assumes that the grid of profile_densities is defined by long_min, long_max, long_step, lat_min, lat_max, lat_step.
     ex : point [5.87, 41.23] : it will return the density of profile at location [5.9, 41.2]"""
 
-    long_nn, lat_nn = int(point[0]/long_step+0.5)*long_step, int(point[1]/lat_step+0.5)*lat_step
-    idx = (lat_nn - lat_min)/lat_step * (long_max-long_min)/long_step + (long_nn - long_min)/long_step
+    long_nn, lat_nn = int(point[0] / long_step + 0.5) * long_step, int(point[1] / lat_step + 0.5) * lat_step
+    idx = (lat_nn - lat_min) / lat_step * (long_max - long_min) / long_step + (long_nn - long_min) / long_step
     idx = int(idx)
     return profile_densities[idx]
 
@@ -181,32 +181,37 @@ def get_profiles(file='ts_profiles.pkl', p=0.01, density_grid=None, proba='sqrt'
      if density_grid is None it selects the profiles in valid_PROFS following an uniform probability distribution
      otherwise each profile is selected with a probability inversly proportional to the density of profiles at its location
      p is the proportion of validation data to use"""
-    #p = proportion of validation data
+    # p = proportion of validation data
     with open(file, 'rb') as f:
         PROFS = pickle.load(f)
     n = len(PROFS)
     if density_grid is None:
         np.random.shuffle(PROFS)
-        valid_PROFS = PROFS[:int(n*p)]
-        train_PROFS = PROFS[int(n*p):]
+        valid_PROFS = PROFS[:int(n * p)]
+        train_PROFS = PROFS[int(n * p):]
 
     else:
-        nb_validation = n*p
+        nb_validation = n * p
         long_lats = get_long_lats(PROFS)
         densities = [density_profiles_nn_interpolation(density_grid, p) for p in long_lats]
         print(f"Mean density over all points : {mean(densities)}")
-        if proba == 'proportional' :
-            C = nb_validation/sum([1/d for d in densities]) #we choose C such that the expectation of the number of validation
-            #profiles is nb_validation = number of profiles * proportion of validation data
-        elif proba == 'sqrt' :
-            C = nb_validation/sum([1/np.sqrt(d) for d in densities])
+        if proba == 'proportional':
+            C = nb_validation / sum(
+                [1 / d for d in densities])  # we choose C such that the expectation of the number of validation
+            # profiles is nb_validation = number of profiles * proportion of validation data
+        elif proba == 'sqrt':
+            C = nb_validation / sum([1 / np.sqrt(d) for d in densities])
+        else:
+            raise Exception('choose proba = proportional or sqrt')
         valid_PROFS = []
         valid_PROFS_idx = []
         for i in range(len(PROFS)):
-            if proba == 'proportional' :
-                select_prob = C/densities[i]
-            elif proba == 'sqrt' :
+            if proba == 'proportional':
+                select_prob = C / densities[i]
+            elif proba == 'sqrt':
                 select_prob = C / np.sqrt(densities[i])
+            else:
+                raise Exception('choose proba = proportional or sqrt')
             if rd.random() < select_prob:
                 valid_PROFS_idx.append(i)
                 valid_PROFS.append(PROFS[i])
@@ -226,33 +231,32 @@ def plot_density_histogram(PROFS, density_grid, title, range=None):
     plt.show()
 
 
-
-
 if __name__ == '__main__':
     from plot_profile_locations import plot_data
-    #PROFS, _, _ = get_profiles()
-    #density_profiles(PROFS, radius=1, lat_step=0.1, long_step=0.1) #save txt file with densities on a gridy
-    long_lats, densities = read_density_txt() #get the saved values of densities
+
+    # PROFS, _, _ = get_profiles()
+    # density_profiles(PROFS, radius=1, lat_step=0.1, long_step=0.1) #save txt file with densities on a gridy
+    long_lats, densities = read_density_txt()  # get the saved values of densities
     print('début')
-    PROFS, _, valid_PROFS = get_profiles(density_grid=densities)
+    PROFS, _, valid_PROFS = get_profiles(p=0.05, density_grid=densities)
     plot_density_histogram(valid_PROFS, densities,
-                           title='validation profile densities with probability selection inversly proportional to density',
-                           range=(0, 50))
+                           title='validation profile densities with probability selection inversly proportional to '
+                                 'square root of density',
+                           range=(0, 100))
 
     plot_data(get_longs(PROFS), get_lats(PROFS), [1 if p in valid_PROFS else 0 for p in PROFS],
-              title='validation data location with probability of selction inversly proportional to density')
-    PROFS, _, valid_PROFS = get_profiles()
+              title='validation data location with probability of selction inversly proportional to squared root of density')
+    PROFS, _, valid_PROFS = get_profiles(p=0.05)
     plot_density_histogram(valid_PROFS, densities,
                            title='validation profile densities with uniform probability of selection')
     plot_data(get_longs(PROFS), get_lats(PROFS), [1 if p in valid_PROFS else 0 for p in PROFS],
               title='validation data location with uniform probability of selction')
 
-
     long = 22.31
     lat = 34.65
     point = np.array([long, lat])
     density_at_point = density_profiles_nn_interpolation(densities, point)
-    
+
     print(f'the density of profiles at point {point} is : {density_at_point}')
 
     print('plot profiles densities')
@@ -262,8 +266,11 @@ if __name__ == '__main__':
 
     longs = np.arange(-4, 35, 0.01)
     points = [[long, 38] for long in longs]
-    plt.plot(longs, [density_profiles_nn_interpolation(densities, p) for p in points]) #plot profiles density at lat 38
+    plt.plot(longs,
+             [density_profiles_nn_interpolation(densities, p) for p in points])  # plot profiles density at lat 38
     plt.show()
+
+
 
 
 
