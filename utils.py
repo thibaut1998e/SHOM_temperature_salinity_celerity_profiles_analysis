@@ -31,8 +31,13 @@ class LIGHT_PROF():
         sound_speed = gsw.density.sound_speed(CT, self.salt, p)
         if domain is not None:
             f = interp1d(self.depth, sound_speed)
-            return f(domain)
-        return sound_speed
+            return CELERITY_PROF(f(domain), self)
+        return CELERITY_PROF(sound_speed, self)
+
+class CELERITY_PROF() :
+    def __init__(self, celerities, prof) :
+        self.celerities = celerities
+        self.prof = prof
 
 
 def get_long_lats(PROFS):
@@ -235,6 +240,20 @@ def get_profiles(file='ts_profiles.pkl', p=0.01, density_grid=None, proba='sqrt'
     print('number of validation profiles', len(valid_PROFS))
     return PROFS, train_PROFS, valid_PROFS
 
+def get_all_profiles(file='ts_profiles.pkl') :
+    with open(file, 'rb') as f:
+        PROFS = pickle.load(f)
+    return PROFS
+    
+def get_projected_celerity_profiles(PROFS, domain) :
+    projected_profiles = []
+    for prof in PROFS :
+        if prof.depth[0] >= domain[-1] and prof.depth[-1] <= domain[0] :
+            try :
+                projected_profiles.append(prof.get_sound_speed(domain))
+            except :
+                print(prof.depth)
+    return projected_profiles
 
 def plot_density_histogram(PROFS, density_grid, title, range=None):
     long_lats = get_long_lats(PROFS)
