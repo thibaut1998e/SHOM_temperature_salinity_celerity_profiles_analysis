@@ -53,6 +53,28 @@ class CELERITY_PROF():
         plt.show()
 
 
+def plot_profiles(profiles, nb=3, xlabel='', title='', axs_shape=None):
+    """profiles : array of profile of any measure (temp, celerity , salt etc). One line is one profile
+    plot them in a matplotlib subplot"""
+    N = len(profiles)
+    if axs_shape is None:
+        nb_lines = N//nb+1
+        fig, axs = plt.subplots(nb_lines, nb)
+    else:
+        fig, axs = plt.subplots(axs_shape[0], axs_shape[1])
+        nb = axs.shape[0]
+    if len(axs.shape) == 1:
+        axs = np.array([axs])
+    print(axs.shape)
+    for i in range(N):
+        axs[i // nb][i % nb].plot(profiles[i])
+        axs[i // nb][i % nb].set(xlabel=xlabel, ylabel='depth')
+    fig.suptitle(title)
+    plt.show()
+
+
+
+
 def supress_nans_in_list(measures):
     from math import isnan
     for ind in range(len(measures)):
