@@ -17,6 +17,7 @@ class LIGHT_PROF():
         self.lon = lon
         self.lat = lat
         self.date = date
+        self.sound_speed = []
 
     def surface_temp(self):
         return self.temp[-1]
@@ -27,17 +28,54 @@ class LIGHT_PROF():
         the lowest value of domain sould be higher than the lowest value in self.depth and the highest value of domain
         should be lower than the highest value in self.depth"""
         CT = gsw.CT_from_pt(self.salt, self.temp)
-        p = np.array(self.depth)/10 - 10.1325
+        p = np.array(self.depth) / 10 - 10.1325
         sound_speed = gsw.density.sound_speed(CT, self.salt, p)
         if domain is not None:
             f = interp1d(self.depth, sound_speed)
-            return CELERITY_PROF(f(domain), self)
-        return CELERITY_PROF(sound_speed, self)
+            return CELERITY_PROF(f(domain), domain, self)
+        return CELERITY_PROF(sound_speed, self.depth, self)
 
-class CELERITY_PROF() :
-    def __init__(self, celerities, prof) :
+    def clean(self):
+        supress_nans_in_list(self.temp)
+        supress_nans_in_list(self.salt)
+
+
+class CELERITY_PROF():
+    def __init__(self, celerities, domain, prof):
         self.celerities = celerities
         self.prof = prof
+        self.domain = domain
+
+    def plot(self):
+        plt.plot(self.celerities, self.domain)
+        plt.ylabel('depth (m)')
+        plt.xlabel('sound speed (m.s-1)')
+        plt.show()
+
+
+def supress_nans_in_list(measures):
+    from math import isnan
+    for ind in range(len(measures)):
+        if isnan(measures[ind]):
+            first_ind = ind
+            last_ind = ind + 1 if ind < len(measures) - 1 else ind
+            while last_ind < len(measures) - 1 and isnan(measures[last_ind]):
+                last_ind += 1
+            if first_ind == 0:
+                for i in range(first_ind, last_ind + 1):
+                    measures[i] = measures[last_ind + 1]
+            elif last_ind == len(measures) - 1:
+                for i in range(first_ind, last_ind + 1):
+                    measures[i] = measures[first_ind - 1]
+            else:
+                for i in range(first_ind, last_ind + 1):
+                    measures[i] = (measures[first_ind - 1] + measures[last_ind + 1]) / 2
+
+
+def suppress_nans_celerities(profiles):
+    for prof in profiles:
+        celerities = prof.celerities
+        supress_nans_in_list(celerities)
 
 
 def get_long_lats(PROFS):
@@ -128,8 +166,6 @@ def compute_profiles_statistics(profiles):
     print('max depths', max_depths)
     print('min depths', min_depths)
     return min_long_lat, max_long_lat, min_depths, max_depths, min(dates), max(dates)
-
-
 
 
 def mean(L):
@@ -240,20 +276,24 @@ def get_profiles(file='ts_profiles.pkl', p=0.01, density_grid=None, proba='sqrt'
     print('number of validation profiles', len(valid_PROFS))
     return PROFS, train_PROFS, valid_PROFS
 
-def get_all_profiles(file='ts_profiles.pkl') :
+
+def get_all_profiles(file='ts_profiles.pkl'):
     with open(file, 'rb') as f:
         PROFS = pickle.load(f)
+    np.random.shuffle(PROFS)
     return PROFS
-    
-def get_projected_celerity_profiles(PROFS, domain) :
+
+
+def get_projected_celerity_profiles(PROFS, domain):
     projected_profiles = []
-    for prof in PROFS :
-        if prof.depth[0] >= domain[-1] and prof.depth[-1] <= domain[0] :
-            try :
+    for prof in PROFS:
+        if prof.depth[0] >= domain[-1] and prof.depth[-1] <= domain[0]:
+            try:
                 projected_profiles.append(prof.get_sound_speed(domain))
-            except :
+            except:
                 print(prof.depth)
     return projected_profiles
+
 
 def plot_density_histogram(PROFS, density_grid, title, range=None):
     long_lats = get_long_lats(PROFS)
@@ -263,10 +303,6 @@ def plot_density_histogram(PROFS, density_grid, title, range=None):
     plt.ylabel('nb of profiles')
     plt.title(title)
     plt.show()
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -309,17 +345,3 @@ if __name__ == '__main__':
     plt.plot(longs,
              [density_profiles_nn_interpolation(densities, p) for p in points])  # plot profiles density at lat 38
     plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
