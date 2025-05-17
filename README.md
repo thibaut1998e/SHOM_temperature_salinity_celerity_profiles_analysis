@@ -40,6 +40,12 @@ This step helps identify regions with similar hydrological behavior, which can b
 
 A **Kalman filter** was implemented from scratch (without using pre-built libraries) to smooth and predict the temperature and salinity profiles. The Kalman filter is a **recursive estimation algorithm** used to infer the hidden state of a system from noisy observations. In this context, it helps denoise the vertical profiles and improve the reliability of derived variables such as the sound speed.
 
+### 4. Spatial Variogram Analysis
+
+To better understand the spatial correlation structure of the physical properties of seawater (temperature and salinity), a variogram analysis was conducted. This technique, commonly used in geostatistics, quantifies how the similarity between values decreases as the spatial separation between them increases.
+
+
+
 ---
 
 This project provides tools for visualizing and analyzing oceanographic profiles, which are essential for acoustic modeling in naval and marine research operations conducted by SHOM.
